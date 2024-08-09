@@ -18,7 +18,6 @@ You should have received a copy of the GNU General Public License along with bit
 
 #include <errno.h>
 #include <dirent.h>
-#include <linux/limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -256,11 +255,11 @@ bool bc_put(BcHandle *bc, s8 key, s8 val) {
 
 
   KeyDirEntry kd_entry = {
-      .file_id = bc->active_file_path,
       .timestamp = bc_entry.header.timestamp,
       .val_len = bc_entry.header.val_len,
       .val_pos = bc->cursor,
   };
+  memcpy(kd_entry.file_id, bc->active_file_path, PATH_MAX);
 
   encodeEntry(bc_entry);
 
@@ -278,7 +277,7 @@ bool bc_put(BcHandle *bc, s8 key, s8 val) {
   bc->cursor += bc_entry.buffer_len;
 
   if (bc->options.sync_on_put) {
-    int out = fflush(bc->active_fp);
+    i8 out = fflush(bc->active_fp);
     return_value_if(out != 0, false, ERR_ACCESS);
   }
 
@@ -372,8 +371,7 @@ private char *getFileName(u32 num) {
   return hex_num;
 }
 
-private
-bool getNewFileHandle(BcHandle *bc) {
+private bool getNewFileHandle(BcHandle *bc) {
   fclose(bc->active_fp);
 
   bool out = getFilePath(bc->active_file_path, bc->data_dir_path, BIN_EXT, bc->num_files + 1);
@@ -399,8 +397,7 @@ private i64 getTimestamp(void) {
   return tv.tv_sec;
 }
 
-private
-bool growKeyDir(BcHandle *bc, isize data_files_num, isize hint_files_num) {
+private bool growKeyDir(BcHandle *bc, isize data_files_num, isize hint_files_num) {
   char header_buffer[HEADER_SIZE];
 
   for (isize i = 1; i <= data_files_num; i++) {
@@ -434,11 +431,11 @@ bool growKeyDir(BcHandle *bc, isize data_files_num, isize hint_files_num) {
       s8 key = {.data = (char *)key_data, .len = header.key_len};
 
       KeyDirEntry kd_entry = {
-          .file_id = file_path,
           .timestamp = header.timestamp,
           .val_len = header.val_len,
           .val_pos = val_pos,
       };
+      memcpy(kd_entry.file_id, file_path, PATH_MAX);
 
       bool res = ht_insert(&bc->key_dir, key, kd_entry);
       val_len = header.val_len;
@@ -481,11 +478,11 @@ bool growKeyDir(BcHandle *bc, isize data_files_num, isize hint_files_num) {
       s8 key = {.data = (char *)key_data, .len = header.key_len};
 
       KeyDirEntry kd_entry = {
-          .file_id = merged_file_path,
           .timestamp = header.timestamp,
           .val_len = header.val_len,
           .val_pos = val_pos,
       };
+      memcpy(kd_entry.file_id, merged_file_path, PATH_MAX);
 
       bool res = ht_insert(&bc->key_dir, key, kd_entry);
       return_value_if(!res, false, ERR_KEY_INSERT_FAILED);
@@ -600,10 +597,10 @@ int main(void) {
   BcHandle bc = bc_res.bc;
   //bc_merge(&bc);
 
-  for (int i = 0; i < 10000; i++)
-    bc_put(&bc, s8("chhota"), s8("bheem"));
-  //s8 val = bc_get(&bc, s8("chhota"));
-  //printf("%s\n", val.data);
+  //for (int i = 0; i < 10000; i++)
+  //bc_put(&bc, s8("korak"), s8("seed"));
+  s8 val = bc_get(&bc, s8("korak"));
+  printf("%s\n", val.data);
   //bc_delete(&bc, s8("chhota"));
   free(heap);
   bc_close(&bc);

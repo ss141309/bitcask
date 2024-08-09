@@ -19,10 +19,12 @@ You should have received a copy of the GNU General Public License along with bit
 #include <stddef.h>
 #include <stdint.h>
 
+#include <linux/limits.h>
+
 #include "utils.h"
 
 typedef struct {
-  char *file_id;
+  char file_id[PATH_MAX];
   isize val_len;
   isize val_pos;
   i64 timestamp;

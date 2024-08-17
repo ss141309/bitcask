@@ -20,6 +20,6 @@ You should have received a copy of the GNU General Public License along with bit
 
 #include <string.h>
 
-bool s8cmp(s8 a, s8 b) {
+inline bool s8cmp(s8 a, s8 b) {
   return a.len == b.len && !memcmp(a.data, b.data, a.len);
 }

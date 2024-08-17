@@ -19,10 +19,18 @@ You should have received a copy of the GNU General Public License along with bit
 #include <stdbool.h>
 #include <stddef.h>
 
+#include <linux/limits.h>
+
 #include "alloc.h"
-#include "bitcask.h"
 #include "s8.h"
 #include "utils.h"
+
+typedef struct {
+  char file_id[PATH_MAX];
+  isize val_len;
+  isize val_pos;
+  i64 timestamp;
+} KeyDirEntry;
 
 typedef struct {
   s8 key;

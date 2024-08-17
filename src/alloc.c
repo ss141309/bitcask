@@ -20,7 +20,7 @@ You should have received a copy of the GNU General Public License along with bit
 
 #include <string.h>
 
-void *alloc(Arena *a, isize size, isize align, isize count) {
+void *alloc(Arena *a, isize size, isize align, isize count, i8 flags) {
   isize padding = -(uptr)a->beg & (align - 1);
   isize available = a->end - a->beg - padding;
   if (available < 0 || count > available / size) {
@@ -28,5 +28,5 @@ void *alloc(Arena *a, isize size, isize align, isize count) {
   }
   void *p = a->beg + padding;
   a->beg += padding + count * size;
-  return memset(p, 0, count * size);
+  return flags & NOZERO ? p : memset(p, 0, count * size);
 }

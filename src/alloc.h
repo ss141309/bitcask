@@ -23,11 +23,17 @@ You should have received a copy of the GNU General Public License along with bit
 
 #include "utils.h"
 
-#define new(a, t, n) (t *)alloc(a, sizeof(t), alignof(t), n)
+#define new(...) newx(__VA_ARGS__, new4, new3, new2)(__VA_ARGS__)
+#define newx(a, b, c, d, e, ...) e
+#define new2(a, t) (t *)alloc(a, sizeof(t), alignof(t), 1, 0)
+#define new3(a, t, n) (t *)alloc(a, sizeof(t), alignof(t), n, 0)
+#define new4(a, t, n, f) (t *)alloc(a, sizeof(t), alignof(t), n, f)
+
+#define NOZERO 1
 
 typedef struct {
   char *beg;
   char *end;
 } Arena;
 
-void *alloc(Arena *a, isize size, isize align, isize count);
+void *alloc(Arena *a, isize size, isize align, isize count, i8 flags);

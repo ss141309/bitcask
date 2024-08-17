@@ -33,6 +33,7 @@ typedef uintptr_t uptr;
 #define lengthof(s) (countof(s) - 1)
 
 
+#define ERR_SYSCONF "Sysconf failed.\n"
 #define ERR_MERGE "No files to merge.\n"
 #define ERR_CRC_FAILED "Failed to verify CRC\n"
 #define ERR_KEY_INSERT_FAILED "Cannot insert key.\n"

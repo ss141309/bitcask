@@ -22,6 +22,7 @@ You should have received a copy of the GNU General Public License along with bit
 #include <string.h>
 #include <unistd.h>
 #include <sys/file.h>
+#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -83,6 +84,7 @@ typedef struct {
   bool is_ok;
 } BcHandleResult;
 
+private isize getRamSize(void);
 private char *getFileName(u32 num);
 private bool getNewFileHandle(BcHandle *bc);
 private i64 getTimestamp(void);
@@ -390,6 +392,18 @@ private bool getNewFileHandle(BcHandle *bc) {
   return true;
 }
 
+private isize getRamSize(void) {
+    isize pages = sysconf(_SC_PHYS_PAGES);
+    isize page_size = sysconf(_SC_PAGE_SIZE);
+
+    return_value_if(pages == -1 || page_size == -1, -1, ERR_SYSCONF);
+    return_value_if(pages >= PTRDIFF_MAX / page_size, -1, ERR_ARITHEMATIC_OVERFLOW);
+
+    isize ram_size = pages * page_size;
+
+    return ram_size;
+}
+
 private i64 getTimestamp(void) {
   struct timeval tv;
   i8 out = gettimeofday(&tv, NULL);
@@ -585,12 +599,13 @@ bool mergeEntries(BcHandle *bc, char *data_file_path) {
   return true;
 }
 
-#include <stdlib.h>
-
 int main(void) {
-  isize cap = (isize)1 << 31;
-  char *heap = malloc(cap);
+  isize cap = getRamSize();
+  char *heap = mmap(NULL, cap, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  return_value_if(heap == MAP_FAILED, -1, ERR_OUT_OF_MEMORY);
+
   Arena arena = {.beg = heap, .end = heap + cap};
+
   Options options = {.read_write = true, .sync_on_put = false, .max_file_size = 1000 * 1024 * 1024};
   BcHandleResult bc_res = bc_open(arena, s8("/home/ss141309/test"), options);
   if (!bc_res.is_ok) return -1;
@@ -602,6 +617,6 @@ int main(void) {
   s8 val = bc_get(&bc, s8("korak"));
   printf("%s\n", val.data);
   //bc_delete(&bc, s8("chhota"));
-  free(heap);
+  munmap(heap, cap);
   bc_close(&bc);
 }

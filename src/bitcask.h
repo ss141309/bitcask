@@ -63,3 +63,11 @@ typedef struct {
   BcHandle bc;
   bool is_ok;
 } BcHandleResult;
+
+BcHandleResult bc_open(Arena arena, s8 dir_path, Options options);
+void bc_close(BcHandle *bc);
+s8 bc_get(BcHandle *bc, s8 key);
+bool bc_put(BcHandle *bc, s8 key, s8 val);
+bool bc_delete(BcHandle *bc, s8 key);
+bool bc_merge(BcHandle *bc);
+bool bc_sync(BcHandle *bc);

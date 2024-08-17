@@ -40,8 +40,7 @@ bool ht_insert(HashTable  *ht, s8 key, KeyDirEntry val) {
   KvPair kv_pair = {
     .key = key,
     .val = val,
-    .is_occupied = false,
-    .is_deleted = false
+    .is_occupied = false
   };
 
   u64 index = hash(ht->capacity, kv_pair.key);
@@ -67,7 +66,7 @@ KeyDirEntry *ht_get(HashTable *ht, s8 key) {
   u64 index = hash(ht->capacity, key);
 
   while (ht->kv_pairs[index].is_occupied) {
-    if (s8cmp(key, (ht)->kv_pairs[index].key) && !ht->kv_pairs[index].is_deleted) {
+    if (s8cmp(key, (ht)->kv_pairs[index].key)) {
       return &ht->kv_pairs[index].val;
      }
 
@@ -75,21 +74,6 @@ KeyDirEntry *ht_get(HashTable *ht, s8 key) {
   }
 
   return NULL;
-}
-
-bool ht_delete(HashTable *ht, s8 key) {
-  u64 index = hash(ht->capacity, key);
-  while (ht->kv_pairs[index].is_occupied) {
-    if (s8cmp(key, ht->kv_pairs[index].key)) {
-      ht->kv_pairs[index].is_deleted = true;
-      ht->len -= 1;
-      return true;
-    }
-
-    index = (index + 1) & (ht->capacity - 1);
-  }
-
-  return false;
 }
 
 static inline u64 hash(isize ht_capacity, s8 key) {

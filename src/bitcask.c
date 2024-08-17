@@ -224,14 +224,9 @@ bool bc_put(BcHandle *bc, s8 key, s8 val) {
 
   fwrite(bc_entry.buffer, sizeof(char), bc_entry.buffer_len, bc->active_fp);
 
-  bool res = true;
-  if (s8cmp(s8("🪦"), val)) {
-    res = ht_delete(&bc->key_dir, key);
-  } else {
-    res = ht_insert(&bc->key_dir, key, kd_entry);
-  }
-
+  bool res = ht_insert(&bc->key_dir, key, kd_entry);
   return_value_if(!res, false, ERR_KEY_INSERT_FAILED);
+
   return_value_if(bc->cursor >= PTRDIFF_MAX - bc_entry.buffer_len, false, ERR_ARITHEMATIC_OVERFLOW);
   bc->cursor += bc_entry.buffer_len;
 
@@ -267,6 +262,12 @@ bool bc_merge(BcHandle *bc) {
   i8 out = rename(bc->active_file_path, new_name);
   return_value_if(out == -1, false, ERR_ACCESS);
 
+  return true;
+}
+
+bool bc_sync(BcHandle *bc) {
+  i8 out = fflush(bc->active_fp);
+  return_value_if(out == EOF, false, ERR_ACCESS);
   return true;
 }
 
@@ -465,8 +466,7 @@ private bool growKeyDir(BcHandle *bc, isize data_files_num, isize hint_files_num
   return true;
 }
 
-private
-bool mergeEntries(BcHandle *bc, char *data_file_path) {
+private bool mergeEntries(BcHandle *bc, char *data_file_path) {
   isize merged_files_count = countFiles(bc->merged_dir_path);
   return_value_if(merged_files_count == -1, false, ERR_ACCESS);
 

@@ -36,7 +36,6 @@ typedef struct {
   s8 key;
   KeyDirEntry val;
   bool is_occupied;
-  bool is_deleted;
 } KvPair;
 
 typedef struct {
@@ -53,4 +52,3 @@ typedef struct {
 HashTableResult ht_create(Arena *arena, isize ht_capacity);
 bool ht_insert(HashTable *ht, s8 key, KeyDirEntry val);
 KeyDirEntry *ht_get(HashTable *ht, s8 key);
-bool ht_delete(HashTable *ht, s8 key);

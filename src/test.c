@@ -2,10 +2,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
-#include <stdlib.h>
-
 #include "bitcask.h"
-#include "ht.h"
 #include "utils.h"
 
 private isize getRamSize(void);

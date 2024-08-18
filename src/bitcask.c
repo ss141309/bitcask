@@ -107,7 +107,7 @@ BcHandleResult bc_open(Arena arena, s8 dir_path, Options options) {
   snprintf(bc->hint_dir_path, dir_path.len + HINT_FILES.len + 2, "%s/%s", dir_path.data,
            HINT_FILES.data);
 
-  memcpy(bc->parent_dir_path, dir_path.data, PATH_MAX);
+  memcpy(bc->parent_dir_path, dir_path.data, dir_path.len);
 
   crc64speed_init();
   bc->arena = arena;
@@ -228,6 +228,7 @@ bool bc_put(BcHandle *bc, s8 key, s8 val) {
       .val_len = bc_entry.header.val_len,
       .val_pos = bc->cursor,
   };
+  kd_entry.file_id = new(&bc->arena, char, PATH_MAX);
   memcpy(kd_entry.file_id, bc->active_file_path, PATH_MAX);
 
   encodeEntry(bc_entry);
@@ -250,6 +251,8 @@ bool bc_put(BcHandle *bc, s8 key, s8 val) {
 
 bool bc_delete(BcHandle *bc, s8 key) {
   KeyDirEntry *kd_entry = ht_get(&bc->key_dir, key);
+
+  if (kd_entry == NULL) printf("%s\n", key.data);
   return_value_if(kd_entry == NULL, false, ERR_KEY_MISSING);
 
   i8 out = bc_put(bc, key, s8("🪦"));
@@ -417,6 +420,7 @@ private bool growKeyDir(BcHandle *bc, isize data_files_num, isize hint_files_num
           .val_len = header.val_len,
           .val_pos = val_pos,
       };
+      kd_entry.file_id = new(&bc->arena, char, PATH_MAX);
       memcpy(kd_entry.file_id, file_path, PATH_MAX);
 
       bool res = ht_insert(&bc->key_dir, key, kd_entry);

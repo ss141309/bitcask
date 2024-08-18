@@ -2,7 +2,10 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
+#include <stdlib.h>
+
 #include "bitcask.h"
+#include "ht.h"
 #include "utils.h"
 
 private isize getRamSize(void);
@@ -43,12 +46,12 @@ int main(void) {
     isize key_len = strnlen(key, 10);
     isize val_len = strnlen(val, 10);
 
-    s8 str_key;
+    s8 str_key = {0};
     str_key.data = new (&arena, char, key_len);
     memcpy(str_key.data, key, key_len);
     str_key.len = key_len;
 
-    s8 str_val;
+    s8 str_val = {0};
     str_val.data = new (&arena, char, val_len);
     memcpy(str_val.data, val, val_len);
     str_val.len = val_len;
@@ -57,8 +60,24 @@ int main(void) {
   }
 
   // Get value
-  s8 val = bc_get(&bc, s8("key4444"));
-  return_value_if(!s8cmp(val, s8("val4444")), -1, "values are not equal.\n");
+  s8 val = bc_get(&bc, s8("key2544"));
+  return_value_if(!s8cmp(val, s8("val2544")), -1, "values are not equal.\n");
+
+  // Delete values
+  for (u32 i = 0; i < 5000; i += 2) {
+    char key[10];
+
+    snprintf(key, 10, "key%u", i);
+
+    isize key_len = strnlen(key, 10);
+
+    s8 str_key = {0};
+    str_key.data = new (&arena, char, key_len);
+    memcpy(str_key.data, key, key_len);
+    str_key.len = key_len;
+
+    //bc_delete(&bc, str_key);
+  }
 
   munmap(heap, cap);
   bc_close(&bc);

@@ -31,20 +31,17 @@ HashTableResult ht_create(Arena *arena, isize ht_capacity) {
   ht->len = 0;
   ht->capacity = ht_capacity;
   ht->kv_pairs = new(arena, KvPair, ht_capacity, NOZERO);
-
+  ht->arena = arena;
   ht_res.is_ok = true;
   return ht_res;
 }
 
 bool ht_insert(HashTable *ht, s8 key, KeyDirEntry val) {
-  KvPair kv_pair = {
-    .key = key,
-    .val = val,
-    .is_occupied = false
-  };
+  KvPair kv_pair = {.key = key, .val = val, .is_occupied = false};
 
   u64 index = hash(ht->capacity, kv_pair.key);
 
+  //if (ht->kv_pairs[index].is_occupied != 0 || ht->kv_pairs[index].is_occupied != 1) printf("%s\n", key.data);
   if (!ht->kv_pairs[index].is_occupied) {
     copyKeyToHt(ht, kv_pair, index, 1);
     return true;
@@ -88,7 +85,11 @@ private u64 hash(isize ht_capacity, s8 key) {
 }
 
 private void copyKeyToHt(HashTable *ht, KvPair kv_pair, isize index, u8 inc_len) {
-  memcpy(ht->kv_pairs + index, &kv_pair, sizeof(KvPair));
+   // memcpy(ht->kv_pairs + index, &kv_pair, sizeof(s8) + sizeof(KeyDirEntry));
+   ht->kv_pairs[index].key.data = new (ht->arena, char, kv_pair.key.len);
+   memcpy(ht->kv_pairs[index].key.data, kv_pair.key.data, kv_pair.key.len);
+   ht->kv_pairs[index].key.len = kv_pair.key.len;
+   memcpy(&ht->kv_pairs[index].val, &kv_pair.val, sizeof(KeyDirEntry));
   ht->len += inc_len;
   ht->kv_pairs[index].is_occupied = true;
 }

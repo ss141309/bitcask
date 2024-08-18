@@ -26,7 +26,7 @@ You should have received a copy of the GNU General Public License along with bit
 #include "utils.h"
 
 typedef struct {
-  char file_id[PATH_MAX];
+  char *file_id;
   isize val_len;
   isize val_pos;
   i64 timestamp;
@@ -42,6 +42,7 @@ typedef struct {
   isize len;
   isize capacity;
   KvPair *kv_pairs;
+  Arena *arena;
 } HashTable;
 
 typedef struct {

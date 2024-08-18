@@ -16,26 +16,11 @@ You should have received a copy of the GNU General Public License along with bit
 
 #pragma once
 
+#include <linux/limits.h>
 #include <stdio.h>
 
 #include "ht.h"
 #include "utils.h"
-
-typedef struct {
-  i64 timestamp;
-  isize key_len;
-  isize val_len;
-} Header;
-
-typedef struct {
-  Header header;
-  char *key;
-  char *val;
-  u64 crc;
-
-  char *buffer;
-  isize buffer_len;
-} BcEntry;
 
 typedef struct {
   bool read_write;
@@ -47,11 +32,11 @@ typedef struct {
   isize cursor;
   isize num_files;
 
-  char *parent_dir_path;
-  char *data_dir_path;
-  char *hint_dir_path;
-  char *merged_dir_path;
-  char *active_file_path;
+  char parent_dir_path[PATH_MAX];
+  char data_dir_path[PATH_MAX];
+  char hint_dir_path[PATH_MAX];
+  char merged_dir_path[PATH_MAX];
+  char active_file_path[PATH_MAX];
 
   FILE *active_fp;
   HashTable key_dir;

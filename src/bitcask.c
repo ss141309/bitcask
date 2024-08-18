@@ -18,6 +18,7 @@ You should have received a copy of the GNU General Public License along with bit
 
 #include <errno.h>
 #include <dirent.h>
+#include <linux/limits.h>
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
@@ -40,6 +41,22 @@ You should have received a copy of the GNU General Public License along with bit
 #define KEY_OFFSET VAL_LEN_OFFSET + sizeof(isize)
 #define VAL_OFFSET(key_len) KEY_OFFSET + key_len
 #define CRC_OFFSET(key_len, val_len) VAL_OFFSET(key_len) + val_len
+
+typedef struct {
+  i64 timestamp;
+  isize key_len;
+  isize val_len;
+} Header;
+
+typedef struct {
+  Header header;
+  char *key;
+  char *val;
+  u64 crc;
+
+  char *buffer;
+  isize buffer_len;
+} BcEntry;
 
 private isize getRamSize(void);
 private char *getFileName(u32 num);
@@ -83,30 +100,22 @@ BcHandleResult bc_open(Arena arena, s8 dir_path, Options options) {
     closedir(dirp);
   }
 
-  char data_files_path[PATH_MAX];
-  char merged_files_path[PATH_MAX];
-  char hint_files_path[PATH_MAX];
-
-  snprintf(data_files_path, dir_path.len + DATA_FILES.len + 2, "%s/%s", dir_path.data,
+  snprintf(bc->data_dir_path, dir_path.len + DATA_FILES.len + 2, "%s/%s", dir_path.data,
            DATA_FILES.data);
-  snprintf(merged_files_path, dir_path.len + MERGED_FILES.len + 2, "%s/%s", dir_path.data,
+  snprintf(bc->merged_dir_path, dir_path.len + MERGED_FILES.len + 2, "%s/%s", dir_path.data,
            MERGED_FILES.data);
-  snprintf(hint_files_path, dir_path.len + HINT_FILES.len + 2, "%s/%s", dir_path.data,
+  snprintf(bc->hint_dir_path, dir_path.len + HINT_FILES.len + 2, "%s/%s", dir_path.data,
            HINT_FILES.data);
 
-  bc->parent_dir_path = dir_path.data;
-  bc->data_dir_path = data_files_path;
-  bc->merged_dir_path = merged_files_path;
-  bc->hint_dir_path = hint_files_path;
+  memcpy(bc->parent_dir_path, dir_path.data, PATH_MAX);
 
   crc64speed_init();
   bc->arena = arena;
   bc->options = options;
   bc->num_files = countFiles(bc->data_dir_path);
 
-  char active_file_path[PATH_MAX];
-  bool out = getFilePath(active_file_path, bc->data_dir_path, BIN_EXT, bc->num_files);
-  bc->active_file_path = active_file_path;
+
+  bool out = getFilePath(bc->active_file_path, bc->data_dir_path, BIN_EXT, bc->num_files);
 
   return_value_if(bc->num_files == -1, bc_res, ERR_ACCESS);
   return_value_if(!out, bc_res, ERR_ACCESS);
@@ -114,7 +123,8 @@ BcHandleResult bc_open(Arena arena, s8 dir_path, Options options) {
   bc->active_fp = fopen(bc->active_file_path, "ab+");
   return_value_if(bc->active_fp == NULL, bc_res, ERR_ACCESS);
 
-  HashTableResult ht_res = ht_create(&bc->arena, 4096);
+  isize cap = (isize)1 << 21;
+  HashTableResult ht_res = ht_create(&bc->arena, cap);
   bc->key_dir = ht_res.ht;
   return_value_if(!ht_res.is_ok, bc_res, ERR_OBJECT_INITIALIZATION_FAILED);
 
@@ -400,7 +410,7 @@ private bool growKeyDir(BcHandle *bc, isize data_files_num, isize hint_files_num
       isize bytes_read = fread(key_data, sizeof(char), header.key_len, fp);
       if (bytes_read < header.key_len) break;
 
-      s8 key = {.data = (char *)key_data, .len = header.key_len};
+      s8 key = {.data = key_data, .len = header.key_len};
 
       KeyDirEntry kd_entry = {
           .timestamp = header.timestamp,
@@ -554,26 +564,4 @@ private bool mergeEntries(BcHandle *bc, char *data_file_path) {
   fclose(hint_fp);
 
   return true;
-}
-
-int main(void) {
-  isize cap = getRamSize();
-  char *heap = mmap(NULL, cap, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  return_value_if(heap == MAP_FAILED, -1, ERR_OUT_OF_MEMORY);
-
-  Arena arena = {.beg = heap, .end = heap + cap};
-
-  Options options = {.read_write = true, .sync_on_put = false, .max_file_size = 1000 * 1024 * 1024};
-  BcHandleResult bc_res = bc_open(arena, s8("/home/ss141309/test"), options);
-  if (!bc_res.is_ok) return -1;
-  BcHandle bc = bc_res.bc;
-  //bc_merge(&bc);
-
-  //for (int i = 0; i < 10000; i++)
-  //bc_put(&bc, s8("korak"), s8("seed"));
-  s8 val = bc_get(&bc, s8("korak"));
-  printf("%s\n", val.data);
-  //bc_delete(&bc, s8("chhota"));
-  munmap(heap, cap);
-  bc_close(&bc);
 }

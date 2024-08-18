@@ -60,8 +60,8 @@ int main(void) {
   }
 
   // Get value
-  s8 val = bc_get(&bc, s8("key2544"));
-  return_value_if(!s8cmp(val, s8("val2544")), -1, "values are not equal.\n");
+  s8 val = bc_get(&bc, s8("key4444"));
+  return_value_if(!s8cmp(val, s8("val4444")), -1, "values are not equal.\n");
 
   // Delete values
   for (u32 i = 0; i < 5000; i += 2) {
@@ -76,8 +76,17 @@ int main(void) {
     memcpy(str_key.data, key, key_len);
     str_key.len = key_len;
 
-    //bc_delete(&bc, str_key);
+    bc_delete(&bc, str_key);
   }
+
+  // Merge values
+  bc_merge(&bc);
+
+  bc_sync(&bc);
+
+  // Get value
+  s8 val2 = bc_get(&bc, s8("key1"));
+  return_value_if(!s8cmp(val2, s8("val1")), -1, "values are not equal.\n");
 
   munmap(heap, cap);
   bc_close(&bc);

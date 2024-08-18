@@ -42,7 +42,6 @@ typedef struct {
   isize len;
   isize capacity;
   KvPair *kv_pairs;
-  Arena *arena;
 } HashTable;
 
 typedef struct {
